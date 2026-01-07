@@ -1,129 +1,108 @@
-import matplotlib.pyplot as plt
+import plotly.express as px
 import pandas as pd
 import streamlit as st
 from typing import Optional
 
-# =========================
-# 全局绘图配置（中文支持）
-# =========================
-plt.rcParams["font.sans-serif"] = ["SimHei"]      # 中文字体
-plt.rcParams["axes.unicode_minus"] = False        # 负号正常显示
-
-
 def smart_plot(
     df: pd.DataFrame,
     title: str = "统计分析结果",
-    max_categories: int = 20
-) -> Optional[plt.Figure]:
+    max_categories: int = 20,
+    key: Optional[str] = None
+):
     """
-    智能可视化函数（课程设计完整版）
-
+    智能可视化函数（Plotly 版）
+    
     功能说明：
-    1. 自动分析 DataFrame 列类型
-    2. 智能选择合适的可视化方式
-    3. 支持多列数据，不限制列数
-    4. 适用于数据库查询结果的统计分析展示
-
-    可视化策略：
-    - 单列：
-        - 数值型 → 直方图
-        - 分类型 → 频次柱状图
-    - 两列：
-        - 类别 + 数值 → 分组均值柱状图
-    - 多列：
-        - 多数值列 → 折线图（趋势）
-        - 其余情况 → 自动降级为描述性统计表
-
-    参数：
-        df (pd.DataFrame): 查询得到的数据
-        title (str): 图表标题
-        max_categories (int): 最大分类数量，防止图表过密
+    1. 使用 Plotly 替代 Matplotlib，提供交互式图表
+    2. 自动适配 Streamlit 主题
+    3. 尺寸自适应
     """
 
     if df is None or df.empty:
         st.warning("⚠️ 当前查询结果为空，无法进行可视化分析")
         return None
 
-    fig, ax = plt.subplots(figsize=(8, 5))
+    # 如果数据只有一个值（例如 count=1），不需要画图，直接返回 None
+    if len(df) == 1 and len(df.columns) == 1:
+        return None
+
     columns = df.columns.tolist()
+    fig = None
 
     # =========================
     # 情况 1：只有一列
     # =========================
     if len(columns) == 1:
         col = columns[0]
-
         if pd.api.types.is_numeric_dtype(df[col]):
-            ax.hist(df[col], bins=10)
-            ax.set_xlabel(col)
-            ax.set_ylabel("频数")
-            ax.set_title(f"{title}（数值分布）")
+            # 数值型 -> 直方图
+            fig = px.histogram(df, x=col, title=f"{title}（数值分布）")
         else:
-            value_counts = df[col].value_counts().head(max_categories)
-            value_counts.plot(kind="bar", ax=ax)
-            ax.set_xlabel(col)
-            ax.set_ylabel("数量")
-            ax.set_title(f"{title}（类别分布）")
+            # 类别型 -> 频次柱状图
+            # 先统计频次
+            counts = df[col].value_counts().head(max_categories).reset_index()
+            counts.columns = [col, 'count']
+            fig = px.bar(counts, x=col, y='count', title=f"{title}（类别分布）", text='count')
 
     # =========================
     # 情况 2：正好两列
     # =========================
     elif len(columns) == 2:
         col_x, col_y = columns
+        
+        # 尝试识别数值列和类别列
+        num_cols = df.select_dtypes(include="number").columns.tolist()
+        cat_cols = df.select_dtypes(exclude="number").columns.tolist()
 
-        # 类别 + 数值 → 分组统计
-        if (
-            not pd.api.types.is_numeric_dtype(df[col_x])
-            and pd.api.types.is_numeric_dtype(df[col_y])
-        ):
-            grouped = (
-                df.groupby(col_x)[col_y]
-                .mean()
-                .sort_values(ascending=False)
-                .head(max_categories)
+        if len(num_cols) == 1 and len(cat_cols) == 1:
+            # 类别 + 数值 -> 柱状图
+            # 自动聚合
+            grouped = df.groupby(cat_cols[0])[num_cols[0]].sum().reset_index()
+            # 排序
+            grouped = grouped.sort_values(by=num_cols[0], ascending=False).head(max_categories)
+            
+            fig = px.bar(
+                grouped, 
+                x=cat_cols[0], 
+                y=num_cols[0], 
+                title=f"{title}（统计图）",
+                text=num_cols[0],
+                color=cat_cols[0] # 自动配色
             )
-            grouped.plot(kind="bar", ax=ax)
-            ax.set_xlabel(col_x)
-            ax.set_ylabel(f"{col_y}（均值）")
-            ax.set_title(f"{title}（分组统计）")
-
-        # 两个数值列 → 散点图
-        elif (
-            pd.api.types.is_numeric_dtype(df[col_x])
-            and pd.api.types.is_numeric_dtype(df[col_y])
-        ):
-            ax.scatter(df[col_x], df[col_y])
-            ax.set_xlabel(col_x)
-            ax.set_ylabel(col_y)
-            ax.set_title(f"{title}（相关性分析）")
-
-        # 其他情况 → 降级为频次分析
+        
+        elif len(num_cols) == 2:
+            # 两个数值 -> 散点图
+            fig = px.scatter(df, x=col_x, y=col_y, title=f"{title}（相关性分析）")
+        
         else:
-            value_counts = df[col_x].value_counts().head(max_categories)
-            value_counts.plot(kind="bar", ax=ax)
-            ax.set_xlabel(col_x)
-            ax.set_ylabel("数量")
-            ax.set_title(f"{title}（主键分布）")
+            # 两个类别 -> 热力图或堆叠柱状图（简化处理：只画第一列的分布）
+            counts = df[col_x].value_counts().head(max_categories).reset_index()
+            counts.columns = [col_x, 'count']
+            fig = px.bar(counts, x=col_x, y='count', title=f"{title}（{col_x}分布）")
 
     # =========================
-    # 情况 3：多列（≥3）
+    # 情况 3：多列
     # =========================
     else:
-        numeric_cols = df.select_dtypes(include="number").columns.tolist()
-
-        # 多个数值列 → 趋势/对比分析
-        if len(numeric_cols) >= 2:
-            df[numeric_cols].plot(ax=ax)
-            ax.set_ylabel("数值")
-            ax.set_title(f"{title}（多指标趋势分析）")
-            ax.legend(title="指标")
-
-        # 无法合理绘图 → 描述性统计
+        num_cols = df.select_dtypes(include="number").columns.tolist()
+        if len(num_cols) >= 2:
+            # 多数值 -> 平行坐标图或折线图
+            fig = px.line(df, y=num_cols, title=f"{title}（趋势分析）")
         else:
-            st.info("📊 当前数据不适合直接绘图，已展示描述性统计结果")
-            st.dataframe(df.describe(include="all"))
+            st.info("📊 数据维度较多，建议直接查看表格。")
             return None
 
-    plt.tight_layout()
-    st.pyplot(fig)
+    if fig:
+        # 优化图表布局
+        fig.update_layout(
+            xaxis_title=None,
+            yaxis_title=None,
+            showlegend=False,
+            height=400, # 限制高度
+            width=600,  # 限制宽度，防止在宽屏下过于拉伸
+            margin=dict(l=20, r=20, t=40, b=20)
+        )
+        # 显示图表 (use_container_width=False 以保持固定宽度，更像 ChatGPT 的插图)
+        st.plotly_chart(fig, use_container_width=False, key=key)
+    
     return fig
