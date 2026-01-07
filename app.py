@@ -215,11 +215,16 @@ for i, msg in enumerate(current["messages"]):
             if len(df) == 1 and len(df.columns) == 1:
                 val = df.iloc[0, 0]
                 col_name = df.columns[0]
-                # 居中显示 Metric
-                c1, c2, c3 = st.columns([1, 1, 1])
-                with c2:
-                    st.metric(label=col_name, value=str(val))
-            
+                
+                # 如果是数字类型（统计结果），使用 Metric
+                if pd.api.types.is_numeric_dtype(type(val)) or "count" in col_name.lower() or "人数" in col_name:
+                    c1, c2, c3 = st.columns([1, 1, 1])
+                    with c2:
+                        st.metric(label=col_name, value=str(val))
+                else:
+                    # 如果是文本类型（如查询专业），直接显示文字
+                    st.info(f"📋 **{col_name}**: {val}")
+
             # Case 2: 少量数据表格 -> 使用 Markdown 表格 (模仿 ChatGPT 样式)
             elif len(df) < 10 and len(df.columns) < 5:
                 # 转换为 Markdown 表格

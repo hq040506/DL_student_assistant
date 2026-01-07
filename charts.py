@@ -55,20 +55,32 @@ def smart_plot(
         cat_cols = df.select_dtypes(exclude="number").columns.tolist()
 
         if len(num_cols) == 1 and len(cat_cols) == 1:
-            # 类别 + 数值 -> 柱状图
+            # 类别 + 数值
             # 自动聚合
             grouped = df.groupby(cat_cols[0])[num_cols[0]].sum().reset_index()
             # 排序
             grouped = grouped.sort_values(by=num_cols[0], ascending=False).head(max_categories)
             
-            fig = px.bar(
-                grouped, 
-                x=cat_cols[0], 
-                y=num_cols[0], 
-                title=f"{title}（统计图）",
-                text=num_cols[0],
-                color=cat_cols[0] # 自动配色
-            )
+            # 智能判断：如果类别较少（<=8），优先使用饼图展示占比
+            if len(grouped) <= 8:
+                fig = px.pie(
+                    grouped,
+                    names=cat_cols[0],
+                    values=num_cols[0],
+                    title=f"{title}（占比分析）",
+                    hole=0.4 # 甜甜圈图
+                )
+                fig.update_traces(textposition='inside', textinfo='percent+label')
+            else:
+                # 类别较多时使用柱状图
+                fig = px.bar(
+                    grouped,
+                    x=cat_cols[0],
+                    y=num_cols[0],
+                    title=f"{title}（统计图）",
+                    text=num_cols[0],
+                    color=cat_cols[0] # 自动配色
+                )
         
         elif len(num_cols) == 2:
             # 两个数值 -> 散点图
