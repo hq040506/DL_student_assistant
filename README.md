@@ -1,30 +1,29 @@
-# 🎓 基于大语言模型的学生信息管理助手 (Student AI Assistant)
+# 🎓 基于大语言模型的学生信息管理助手
 
-> **项目状态**：✅ 已完成核心功能开发 | 🚀 准备答辩 / 二次开发
+> **项目状态**：✅ 已完成核心功能开发
 > **技术栈**：Python + Streamlit + DashScope (通义千问) + SQLite + Pandas + Plotly
 
 ---
 
-## 1️⃣ 项目整体说明（老师视角）
+## 1. 项目概述
 
-### 🎯 项目目标
 本项目旨在利用大语言模型（LLM）的自然语言理解能力，构建一个**零门槛、对话式**的学生信息管理系统。用户无需掌握 SQL 语句，只需通过自然语言（如“查询张三的信息”、“统计计算机学院人数”）即可完成复杂的数据库查询、统计与可视化操作。
 
-### 👥 A / B 分工说明
-*   **A 同学（前端与系统集成）**：负责 `Streamlit` 界面搭建、会话状态管理 (`Session State`)、数据可视化 (`Plotly`) 以及与后端接口的对接。
-*   **B 同学（后端与算法逻辑）**：负责 `Prompt Engineering`（提示词工程）、Text2SQL 逻辑实现、意图识别算法优化以及数据库设计。
+### 1.1 团队分工
+*   **前端与系统集成 (A)**：负责 `Streamlit` 界面搭建、会话状态管理 (`Session State`)、数据可视化 (`Plotly`) 以及与后端接口的对接。
+*   **后端与算法逻辑 (B)**：负责 `Prompt Engineering`（提示词工程）、Text2SQL 逻辑实现、意图识别算法优化以及数据库设计。
 
-### 🏗️ 系统架构图（文字版）
+### 1.2 系统架构
 
 ```mermaid
 graph TD
-    User[用户] -->|自然语言输入| UI[Streamlit 前端界面 (app.py)]
-    UI -->|调用| Logic[业务逻辑层 (llm_interface.py)]
+    User[用户] -->|自然语言输入| UI[Streamlit 前端界面]
+    UI -->|调用| Logic[业务逻辑层]
     
     subgraph "核心处理流程"
         Logic -->|1. 意图识别| Intent[规则/LLM 混合判断]
         Intent -->|2. 查询规划| Plan[生成操作计划]
-        Plan -->|3. SQL生成| LLM[DashScope API (Qwen)]
+        Plan -->|3. SQL生成| LLM[DashScope API]
     end
     
     LLM -->|返回 JSON| Logic
@@ -36,43 +35,37 @@ graph TD
 
 ---
 
-## 2️⃣ 模块说明（逐文件）
+## 2. 模块说明
 
 | 文件名 | 类型 | 说明 |
 | :--- | :--- | :--- |
-| **`app.py`** | **入口** | 程序的启动入口。负责 UI 渲染、聊天记录管理 (`st.session_state`)、处理用户输入并展示结果（表格、图表、文字）。 |
-| **`database.py`** | **数据层** | 负责数据库连接、表结构初始化。内置 `Faker` 库，可在数据库为空时自动生成 **300条** 逼真的测试数据。 |
-| **`llm_interface.py`** | **逻辑层** | 核心大脑。封装了 DashScope API 调用，实现了“意图识别 -> SQL 生成 -> 结果解析”的完整链路，包含大量 Prompt 调优逻辑。 |
-| **`charts.py`** | **视图层** | 封装了 `Plotly` 绘图逻辑。根据数据自动判断图表类型（柱状图/饼图）并生成交互式图表。 |
+| **`app.py`** | **入口** | 程序的启动入口。负责 UI 渲染、聊天记录管理、处理用户输入并展示结果。 |
+| **`database.py`** | **数据层** | 负责数据库连接、表结构初始化。内置数据生成器，可在数据库为空时自动生成测试数据。 |
+| **`llm_interface.py`** | **逻辑层** | 核心业务逻辑。封装了 DashScope API 调用，实现了“意图识别 -> SQL 生成 -> 结果解析”的完整链路。 |
+| **`charts.py`** | **视图层** | 封装了 `Plotly` 绘图逻辑。根据数据自动判断图表类型并生成交互式图表。 |
 | **`chat_history_manager.py`** | **工具** | 负责将聊天记录持久化保存到 JSON 文件，支持多会话管理。 |
 
 ---
 
-## 3️⃣ 🔥 给 B 的“二次接入开发文档”（重点）
+## 3. 后端开发文档
 
-如果你需要优化模型的回答效果或修改 SQL 生成逻辑，请关注以下内容。
+本部分主要说明 LLM 交互逻辑与接口规范，便于后续维护与二次开发。
 
-### 📍 Prompt 修改位置
+### 3.1 Prompt 设计
 所有与大模型交互的 Prompt 均位于 **`llm_interface.py`** 文件中。
 
-*   **主 Prompt (`handle` 方法)**：位于 **第 73 - 114 行**。
-    *   *作用*：这是系统的核心 Prompt，定义了数据库结构、Few-Shot 示例和 JSON 输出规范。
-    *   *修改建议*：如果你想增加新的 SQL 语法支持（如 `AVG`, `MAX`），请在这里的 `注意` 部分添加说明。
+*   **主 Prompt (`handle` 方法)**：定义了数据库结构、Few-Shot 示例和 JSON 输出规范。
+*   **兜底 Prompt**：当主逻辑解析失败时的备用方案。
 
-*   **兜底 Prompt**：位于 **第 215 - 247 行**。
-    *   *作用*：当主逻辑失败时的备用方案。
+### 3.2 Text2SQL 规范
+模型生成的 SQL 遵循 **SQLite** 语法，且限制只能操作 `students` 表。
+*   **安全限制**：已在代码层拦截 `DROP`, `TRUNCATE` 等高危指令。
+*   **查询规范**：模糊查询统一使用 `LIKE` 语法。
 
-### 🛠️ Text2SQL 设计规范
-模型生成的 SQL 必须遵循 **SQLite** 语法，且只能操作 `students` 表。
+### 3.3 接口返回结构 (JSON)
+LLM 模块返回严格的 JSON 格式，结构定义如下：
 
-*   **表名**：`students`
-*   **禁止操作**：`DROP TABLE`, `TRUNCATE` 等高危指令（代码层已做正则拦截）。
-*   **模糊查询**：必须使用 `LIKE '%keyword%'`。
-
-### 📦 返回 JSON 结构逐字段说明
-LLM 必须返回严格的 JSON 格式，结构如下：
-
-#### 1. 普通对话 / 闲聊
+#### 1. 普通对话
 ```json
 {
     "type": "chat",
@@ -85,8 +78,8 @@ LLM 必须返回严格的 JSON 格式，结构如下：
 {
     "type": "sql",
     "sql": "SELECT * FROM students WHERE name = '张三'",
-    "response_type": "select",  // 用于前端判断显示表格
-    "explain": "已为您查询张三的信息" // 可选
+    "response_type": "select",
+    "explain": "已为您查询张三的信息"
 }
 ```
 
@@ -95,11 +88,12 @@ LLM 必须返回严格的 JSON 格式，结构如下：
 {
     "type": "sql",
     "sql": "SELECT college, COUNT(*) as count FROM students GROUP BY college",
-    "response_type": "count"   // 前端看到 count 会自动调用 charts.py 绘图
+    "response_type": "count"
 }
 ```
+*注：前端检测到 `response_type: count` 时会自动调用绘图模块。*
 
-#### 4. 插入 / 修改 / 删除 (INSERT / UPDATE)
+#### 4. 数据变更 (INSERT / UPDATE)
 ```json
 {
     "type": "sql",
@@ -107,14 +101,15 @@ LLM 必须返回严格的 JSON 格式，结构如下：
     "response_type": "select"
 }
 ```
-*注意：修改操作在 `llm_interface.py` 中会被拦截，触发“二次确认”流程，不会直接执行。*
+*注：修改操作会触发系统的“二次确认”机制，需用户确认后执行。*
 
 ---
 
-## 4️⃣ 数据库结构说明
+## 4. 数据库设计
 
-数据库文件：`students.db` (SQLite)
-表名：`students`
+数据库采用 SQLite，文件名为 `students.db`。
+
+**表名**：`students`
 
 | 字段名 | 类型 | 说明 | 示例 |
 | :--- | :--- | :--- | :--- |
@@ -124,28 +119,19 @@ LLM 必须返回严格的 JSON 格式，结构如下：
 | `class_name` | TEXT | 班级 | "软件2101班" |
 | `college` | TEXT | 学院 | "计算机学院" |
 | `major` | TEXT | 专业 | "软件工程" |
-| `grade` | INTEGER | 年级 | 2021 |
+| `grade` | INTEGER | 年级 (入学年份) | 2021 |
 | `gender` | TEXT | 性别 | "男" / "女" |
 | `phone` | TEXT | 手机号 | "13812345678" |
 
-> **⚠️ 注意事项**：
-> 1. `grade` 存储的是入学年份（如 2021），不是“大一/大二”。
-> 2. `college` 和 `major` 尽量使用全称，代码中已内置了模糊匹配逻辑 (`_normalize_college`)。
-
 ---
 
-## 5️⃣ 扩展与改进建议（老师很爱看）
+## 5. 未来展望
 
-如果你想在答辩中展示更多亮点，可以考虑以下扩展方向：
-
-1.  **多表关联 (JOIN)**：
-    *   目前只有一张宽表。可以拆分为 `students`, `courses`, `scores` 三张表，实现“查询张三的平均分”等复杂功能。
-2.  **语音交互**：
-    *   利用 `st.audio_input` 接收语音，调用 Whisper 模型转文字，实现真正的“对话式”管理。
-3.  **更强的推理能力**：
-    *   接入 `LangChain` 框架，实现更复杂的思维链 (CoT)，例如“先查出计算机学院所有班级，再统计每个班的男女比例”。
-4.  **权限控制**：
-    *   增加登录页面，区分“管理员”（可修改）和“普通学生”（只读）。
-
----
-*Generated by Student AI Assistant Team*
+1.  **多表关联**：
+    *   扩展课程表 (`courses`) 和成绩表 (`scores`)，支持更复杂的学业数据分析。
+2.  **多模态交互**：
+    *   集成语音识别 (ASR) 与语音合成 (TTS) 模块，实现全语音交互。
+3.  **推理能力增强**：
+    *   引入 `LangChain` 或 `ReAct` 框架，提升处理复杂逻辑推理任务的能力。
+4.  **权限管理**：
+    *   增加用户鉴权模块，区分管理员与普通用户权限。
