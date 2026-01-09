@@ -2,6 +2,7 @@ import sqlite3
 import pandas as pd
 import random
 from faker import Faker
+from typing import Optional, Dict, Any
 
 DB_PATH = "students.db"
 
@@ -46,6 +47,52 @@ def query_df(sql: str) -> pd.DataFrame:
     conn = get_connection()
     try:
         return pd.read_sql_query(sql, conn)
+    finally:
+        conn.close()
+
+
+def query_students(
+    name: Optional[str] = None,
+    student_id: Optional[str] = None,
+    class_name: Optional[str] = None,
+    college: Optional[str] = None,
+    major: Optional[str] = None,
+    grade: Optional[int] = None,
+    gender: Optional[str] = None
+) -> pd.DataFrame:
+    conditions = []
+    params = []
+
+    if name:
+        conditions.append("name LIKE ?")
+        params.append(f"%{name}%")
+    if student_id:
+        conditions.append("student_id LIKE ?")
+        params.append(f"%{student_id}%")
+    if class_name:
+        conditions.append("class_name LIKE ?")
+        params.append(f"%{class_name}%")
+    if college:
+        conditions.append("college = ?")
+        params.append(college)
+    if major:
+        conditions.append("major = ?")
+        params.append(major)
+    if grade:
+        conditions.append("grade = ?")
+        params.append(int(grade))
+    if gender:
+        conditions.append("gender = ?")
+        params.append(gender)
+
+    sql = "SELECT * FROM students"
+    if conditions:
+        sql += " WHERE " + " AND ".join(conditions)
+    sql += " ORDER BY id DESC"
+
+    conn = get_connection()
+    try:
+        return pd.read_sql_query(sql, conn, params=params)
     finally:
         conn.close()
 

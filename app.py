@@ -1,8 +1,9 @@
 import streamlit as st
 import uuid
+import os
 import pandas as pd
 
-from database import init_db, query_df
+from database import init_db, query_df, query_students, get_distinct_values
 from llm_interface import LLMInterface
 from charts import smart_plot
 from chat_history_manager import ChatHistoryManager
@@ -103,12 +104,174 @@ hr {
 </style>
 """, unsafe_allow_html=True)
 
+def _option_index(options, value):
+    return options.index(value) if value in options else 0
+
+
+def render_data_management():
+    st.subheader("学生信息查询")
+
+    default_filters = {
+        "name": "",
+        "student_id": "",
+        "class_name": "",
+        "college": "全部",
+        "major": "全部",
+        "grade": "全部",
+        "gender": "全部",
+    }
+
+    if "data_filters" not in st.session_state:
+        st.session_state.data_filters = default_filters
+
+    filters = st.session_state.data_filters
+
+    try:
+        colleges = [c for c in get_distinct_values("college") if c]
+    except Exception:
+        colleges = []
+    try:
+        majors = [m for m in get_distinct_values("major") if m]
+    except Exception:
+        majors = []
+    try:
+        grades = sorted({int(g) for g in get_distinct_values("grade") if g is not None})
+    except Exception:
+        grades = []
+
+    college_options = ["全部"] + colleges
+    major_options = ["全部"] + majors
+    grade_options = ["全部"] + [str(g) for g in grades]
+    gender_options = ["全部", "男", "女"]
+
+    with st.form("data_filters_form"):
+        col1, col2, col3 = st.columns(3)
+        name = col1.text_input("姓名", value=filters["name"])
+        student_id = col2.text_input("学号", value=filters["student_id"])
+        class_name = col3.text_input("班级", value=filters["class_name"])
+
+        col4, col5, col6, col7 = st.columns(4)
+        college = col4.selectbox(
+            "学院",
+            options=college_options,
+            index=_option_index(college_options, filters["college"])
+        )
+        major = col5.selectbox(
+            "专业",
+            options=major_options,
+            index=_option_index(major_options, filters["major"])
+        )
+        grade = col6.selectbox(
+            "年级",
+            options=grade_options,
+            index=_option_index(grade_options, filters["grade"])
+        )
+        gender = col7.selectbox(
+            "性别",
+            options=gender_options,
+            index=_option_index(gender_options, filters["gender"])
+        )
+
+        submitted = st.form_submit_button("应用过滤")
+
+    if submitted:
+        st.session_state.data_filters = {
+            "name": name,
+            "student_id": student_id,
+            "class_name": class_name,
+            "college": college,
+            "major": major,
+            "grade": grade,
+            "gender": gender,
+        }
+        filters = st.session_state.data_filters
+
+    grade_value = filters["grade"]
+    grade_query = int(grade_value) if grade_value and grade_value != "全部" else None
+
+    df = query_students(
+        name=filters["name"] or None,
+        student_id=filters["student_id"] or None,
+        class_name=filters["class_name"] or None,
+        college=None if filters["college"] == "全部" else filters["college"],
+        major=None if filters["major"] == "全部" else filters["major"],
+        grade=grade_query,
+        gender=None if filters["gender"] == "全部" else filters["gender"],
+    )
+
+    st.caption(f"共 {len(df)} 条记录")
+    if df.empty:
+        st.info("暂无匹配数据")
+        return
+
+    st.dataframe(df, use_container_width=True, hide_index=True)
+    csv = df.to_csv(index=False).encode("utf-8")
+    st.download_button("下载当前结果 (CSV)", csv, "students_export.csv", "text/csv")
+
+
+def render_dashboard():
+    st.subheader("关键指标")
+
+    def safe_query(sql):
+        try:
+            return query_df(sql)
+        except Exception:
+            return pd.DataFrame()
+
+    total_df = safe_query("SELECT COUNT(*) AS count FROM students")
+    college_df = safe_query("SELECT COUNT(DISTINCT college) AS count FROM students")
+    major_df = safe_query("SELECT COUNT(DISTINCT major) AS count FROM students")
+    class_df = safe_query("SELECT COUNT(DISTINCT class_name) AS count FROM students")
+
+    total = int(total_df.iloc[0, 0]) if not total_df.empty else 0
+    college_count = int(college_df.iloc[0, 0]) if not college_df.empty else 0
+    major_count = int(major_df.iloc[0, 0]) if not major_df.empty else 0
+    class_count = int(class_df.iloc[0, 0]) if not class_df.empty else 0
+
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("学生总数", total)
+    c2.metric("学院数量", college_count)
+    c3.metric("专业数量", major_count)
+    c4.metric("班级数量", class_count)
+
+    st.subheader("分布图表")
+    left, right = st.columns(2)
+    with left:
+        df_college = safe_query(
+            "SELECT college, COUNT(*) AS count FROM students GROUP BY college ORDER BY count DESC"
+        )
+        smart_plot(df_college, title="学院人数分布")
+    with right:
+        df_major = safe_query(
+            "SELECT major, COUNT(*) AS count FROM students GROUP BY major ORDER BY count DESC LIMIT 10"
+        )
+        smart_plot(df_major, title="专业人数 Top 10")
+
+    left2, right2 = st.columns(2)
+    with left2:
+        df_grade = safe_query(
+            "SELECT grade, COUNT(*) AS count FROM students GROUP BY grade ORDER BY grade"
+        )
+        smart_plot(df_grade, title="年级人数分布")
+    with right2:
+        df_gender = safe_query(
+            "SELECT gender, COUNT(*) AS count FROM students GROUP BY gender"
+        )
+        smart_plot(df_gender, title="性别人数分布")
+
 # =====================
 # 初始化
 # =====================
 init_db()
 llm = LLMInterface()
 history_mgr = ChatHistoryManager()
+
+if "dashscope_api_key" not in st.session_state:
+    st.session_state.dashscope_api_key = os.getenv("DASHSCOPE_API_KEY", "")
+llm.set_api_key(st.session_state.dashscope_api_key)
+
+if "quick_prompt" not in st.session_state:
+    st.session_state.quick_prompt = None
 
 # =====================
 # 多会话管理
@@ -189,6 +352,33 @@ with st.sidebar:
             else:
                 st.warning("至少保留一个对话")
 
+    st.divider()
+
+    with st.expander("模型设置", expanded=False):
+        api_key = st.text_input(
+            "DASHSCOPE_API_KEY",
+            type="password",
+            value=st.session_state.dashscope_api_key
+        )
+        if api_key != st.session_state.dashscope_api_key:
+            st.session_state.dashscope_api_key = api_key
+            llm.set_api_key(api_key)
+
+        if not llm.has_api_key():
+            st.warning("未检测到 API Key，部分智能解析功能将不可用。")
+        else:
+            st.caption("已加载 API Key")
+
+    with st.expander("示例问题", expanded=False):
+        if st.button("查询张三信息", key="quick_query_1"):
+            st.session_state.quick_prompt = "查询张三信息"
+        if st.button("统计计算机学院人数", key="quick_query_2"):
+            st.session_state.quick_prompt = "统计计算机学院人数"
+        if st.button("统计各学院人数", key="quick_query_3"):
+            st.session_state.quick_prompt = "统计各学院人数"
+        if st.button("张三是男生吗", key="quick_query_4"):
+            st.session_state.quick_prompt = "张三是男生吗"
+
 # =====================
 # 主界面
 # =====================
@@ -243,10 +433,21 @@ for i, msg in enumerate(current["messages"]):
                      with st.expander("📊 点击查看可视化图表", expanded=True):
                         smart_plot(df, key=f"plot_{i}")
 
+st.divider()
+with st.expander("数据看板", expanded=False):
+    render_dashboard()
+
+with st.expander("数据管理", expanded=False):
+    render_data_management()
+
 # =====================
 # 输入
 # =====================
 user_input = st.chat_input("请输入你的问题")
+
+if not user_input and st.session_state.quick_prompt:
+    user_input = st.session_state.quick_prompt
+    st.session_state.quick_prompt = None
 
 if user_input:
     current["messages"].append({"role": "user", "content": user_input})
@@ -313,7 +514,7 @@ if user_input:
                 "content": content,
                 "data": df,
                 "sql": result["sql"], # 保存 SQL 以便恢复
-                "plot": result.get("response_type") == "count"
+                "plot": result.get("response_type") == "count" or "group by" in result["sql"].lower()
             })
 
     # 保存历史

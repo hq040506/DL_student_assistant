@@ -10,8 +10,8 @@ from database import get_distinct_values, query_df, get_connection
 # =========================
 # 配置 DashScope
 # =========================
-# 优先从环境变量读取，否则使用默认值（请确保环境变量 DASHSCOPE_API_KEY 已设置）
-dashscope.api_key = os.getenv("DASHSCOPE_API_KEY", "sk-518017d950824cdfbbae8d953e9ac69f").strip()
+# 优先从环境变量读取（请确保环境变量 DASHSCOPE_API_KEY 已设置）
+dashscope.api_key = os.getenv("DASHSCOPE_API_KEY", "").strip()
 MODEL_NAME = "qwen-turbo"
 
 
@@ -40,6 +40,12 @@ class LLMInterface:
 
         # 统计支持的维度
         self.stat_dims = {"学院", "专业", "性别", "人数", "总人数", "专业数", "班级"}
+
+    def set_api_key(self, api_key: str):
+        dashscope.api_key = (api_key or "").strip()
+
+    def has_api_key(self) -> bool:
+        return bool(dashscope.api_key)
 
     # =====================================================
     # 主入口
@@ -303,11 +309,11 @@ students (
         if plan["type"] == "chat":
             return {"type": "chat", "message": "抱歉，我暂时无法理解您的问题，请换种说法试试。"}
 
-        sql, response_type = self._generate_sql(plan)
-        
-        # 如果 generate_sql 返回的是 chat 类型（例如 boolean check 的结果）
-        if isinstance(sql, dict) and sql.get("type") in ["chat", "ask"]:
-            return sql
+        result = self._generate_sql(plan)
+        if isinstance(result, dict):
+            return result
+
+        sql, response_type = result
 
         self._validate_sql(sql)
 
@@ -743,8 +749,8 @@ students (
         tokens = re.findall(r"[a-zA-Z_]+", sql.lower())
         allowed = (
             self.fields
-            | {"select", "from", "where", "count", "distinct", "as"}
-            | {"insert", "into", "values", "update", "set", "delete", "and", "or", "like", "in", "group", "by", "order", "limit"}
+            | {"select", "from", "where", "count", "distinct", "as", "sum", "avg", "min", "max"}
+            | {"insert", "into", "values", "update", "set", "delete", "and", "or", "like", "in", "group", "by", "order", "limit", "asc", "desc", "null"}
             | {self.table}
         )
 
