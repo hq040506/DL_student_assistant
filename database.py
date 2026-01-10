@@ -96,6 +96,91 @@ def query_students(
     finally:
         conn.close()
 
+
+def get_students_by_student_id(student_id: str) -> pd.DataFrame:
+    conn = get_connection()
+    try:
+        return pd.read_sql_query(
+            "SELECT * FROM students WHERE student_id = ?",
+            conn,
+            params=[student_id]
+        )
+    finally:
+        conn.close()
+
+
+def insert_student(student: Dict[str, Any]) -> int:
+    fields = [
+        "student_id",
+        "name",
+        "class_name",
+        "college",
+        "major",
+        "grade",
+        "gender",
+        "phone",
+    ]
+    values = [student.get(field) for field in fields]
+
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            INSERT INTO students
+            (student_id, name, class_name, college, major, grade, gender, phone)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            values,
+        )
+        conn.commit()
+        return cursor.lastrowid
+    finally:
+        conn.close()
+
+
+def update_student_by_id(row_id: int, updates: Dict[str, Any]) -> int:
+    allowed_fields = {
+        "student_id",
+        "name",
+        "class_name",
+        "college",
+        "major",
+        "grade",
+        "gender",
+        "phone",
+    }
+    fields = [field for field in updates.keys() if field in allowed_fields]
+    if not fields:
+        return 0
+
+    set_clause = ", ".join([f"{field} = ?" for field in fields])
+    params = [updates[field] for field in fields]
+    params.append(row_id)
+
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            f"UPDATE students SET {set_clause} WHERE id = ?",
+            params
+        )
+        conn.commit()
+        return cursor.rowcount
+    finally:
+        conn.close()
+
+
+def delete_student_by_id(row_id: int) -> int:
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM students WHERE id = ?", (row_id,))
+        conn.commit()
+        return cursor.rowcount
+    finally:
+        conn.close()
+
 def generate_random_data(num_records: int = 300):
     """使用 Faker 生成随机学生信息数据并导入数据库"""
     conn = get_connection()

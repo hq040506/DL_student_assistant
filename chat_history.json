@@ -12,63 +12,33 @@
       },
       {
         "role": "user",
-        "content": "今天无锡天气怎么样"
+        "content": "查询计算机学院学生情况"
       },
       {
         "role": "assistant",
-        "content": "我无法查询天气信息，我是学生信息管理助手。你可以问我关于学生信息的问题，例如查询学生信息、统计人数等。"
-      },
-      {
-        "role": "user",
-        "content": "今天无锡天气怎么样"
-      },
-      {
-        "role": "assistant",
-        "content": "我无法查询天气信息，我是学生信息管理助手。你可以问我关于学生信息的问题，例如查询学生信息、统计人数等。"
-      },
-      {
-        "role": "user",
-        "content": "abc"
-      },
-      {
-        "role": "assistant",
-        "content": "抱歉，我不理解您的输入。请提出与学生信息相关的问题，例如查询学生信息、统计人数等。"
-      },
-      {
-        "role": "user",
-        "content": "计算机有多少人"
-      },
-      {
-        "role": "assistant",
-        "content": "🤖 已为您执行查询：\n`SELECT COUNT(*) FROM students WHERE major = '计算机科学与技术'`\n\n🤔 您还想了解什么？(例如：修改手机号、统计班级人数等)",
-        "sql": "SELECT COUNT(*) FROM students WHERE major = '计算机科学与技术'",
-        "plot": true
-      },
-      {
-        "role": "user",
-        "content": "我要计算机所有的专业"
-      },
-      {
-        "role": "assistant",
-        "content": "🤖 已为您执行查询：\n`SELECT DISTINCT major FROM students WHERE major LIKE '%计算机%'`\n\n🤔 您还想了解什么？(例如：修改手机号、统计班级人数等)",
-        "sql": "SELECT DISTINCT major FROM students WHERE major LIKE '%计算机%'",
+        "content": "🤖 已为您执行查询：\n`SELECT * FROM students WHERE college = '计算机学院'`\n\n🤔 您还想了解什么？(例如：修改手机号、统计班级人数等)",
+        "sql": "SELECT * FROM students WHERE college = '计算机学院'",
         "plot": false
       },
       {
         "role": "user",
-        "content": "你可以按照格式虚拟一条学生信息出来吗"
+        "content": "给我画出计算机学院的统计图"
       },
       {
         "role": "assistant",
-        "content": "好的，我将为您生成一条虚拟的学生信息。"
+        "content": "🤖 已为您执行查询：\n`SELECT college, COUNT(*) AS count FROM students GROUP BY college`\n\n🤔 您还想了解什么？(例如：修改手机号、统计班级人数等)",
+        "sql": "SELECT college, COUNT(*) AS count FROM students GROUP BY college",
+        "plot": true
       },
       {
         "role": "user",
-        "content": "这个信息你输出给我"
+        "content": "画出计算机学院各专业的人数分布"
       },
       {
         "role": "assistant",
-        "content": "好的，这是生成的虚拟学生信息：学号为20230101，姓名张三，班级计算机科学与技术2班，学院计算机学院，专业计算机科学与技术，年级2023，性别男，手机号13800001111。"
+        "content": "🤖 已为您执行查询：\n`SELECT major, COUNT(*) AS count FROM students WHERE college = '计算机学院' GROUP BY major`\n\n🤔 您还想了解什么？(例如：修改手机号、统计班级人数等)",
+        "sql": "SELECT major, COUNT(*) AS count FROM students WHERE college = '计算机学院' GROUP BY major",
+        "plot": true
       }
     ],
     "pending": null

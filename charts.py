@@ -7,7 +7,10 @@ def smart_plot(
     df: pd.DataFrame,
     title: str = "统计分析结果",
     max_categories: int = 20,
-    key: Optional[str] = None
+    key: Optional[str] = None,
+    width: Optional[int] = None,
+    height: Optional[int] = None,
+    use_container_width: bool = False
 ):
     """
     智能可视化函数（Plotly 版）
@@ -106,15 +109,17 @@ def smart_plot(
 
     if fig:
         # 优化图表布局
-        fig.update_layout(
+        layout_kwargs = dict(
             xaxis_title=None,
             yaxis_title=None,
             showlegend=False,
-            height=400, # 限制高度
-            width=600,  # 限制宽度，防止在宽屏下过于拉伸
+            height=height if height else 400,
             margin=dict(l=20, r=20, t=40, b=20)
         )
-        # 显示图表 (use_container_width=False 以保持固定宽度，更像 ChatGPT 的插图)
-        st.plotly_chart(fig, use_container_width=False, key=key)
+        if not use_container_width:
+            layout_kwargs["width"] = width if width else 600
+        fig.update_layout(**layout_kwargs)
+        # 显示图表 (默认固定宽度，更像 ChatGPT 的插图)
+        st.plotly_chart(fig, use_container_width=use_container_width, key=key)
     
     return fig
