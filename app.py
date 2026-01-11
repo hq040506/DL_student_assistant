@@ -43,7 +43,7 @@ st.markdown("""
     --bubble-user: #fff3df;
     --bubble-assistant: #eef5f4;
     --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
-    --sidebar-width: 21rem;
+    --sidebar-width: 17rem;
     --header-offset: 3.25rem;
 }
 
@@ -115,29 +115,76 @@ body {
     font-size: 0.95rem;
 }
 
-/* Sidebar buttons */
-[data-testid="stSidebar"] .stButton>button {
-    background-color: #fff7ec;
-    color: var(--text) !important;
-    border: 1px solid #e7dcc8;
-    text-align: left;
-    padding: 6px 10px;
-    width: 100%;
-    border-radius: 8px;
-    transition: all 0.2s ease;
-    font-size: 0.86rem;
+/* Sidebar buttons (Flat Menu Style) */
+section[data-testid="stSidebar"] .stButton button {
+    border: none !important;
+    box-shadow: none !important;
+    text-align: left !important;
+    padding: 0.35rem 0.5rem !important; /* Adjusted padding */
+    transition: all 0.15s ease !important;
+    font-size: 0.95rem !important;
+    border-radius: 4px !important;
+    display: flex !important;
+    justify-content: flex-start !important; /* Force Left Align */
+    align-items: center !important;
+    width: 100% !important;
 }
 
-[data-testid="stSidebar"] .stButton>button:hover {
-    background-color: #fff0d6 !important;
-    border-color: #e5c9a5;
-    transform: translateY(-1px);
+/* Force inner text alignment - Aggressive */
+section[data-testid="stSidebar"] .stButton button div,
+section[data-testid="stSidebar"] .stButton button p {
+    text-align: left !important;
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
 }
 
-[data-testid="stSidebar"] .stButton>button:first-child {
-    background-color: #fff7ec !important;
-    color: var(--text) !important;
-    border: 1px solid #e7dcc8;
+/* Inactive Items */
+section[data-testid="stSidebar"] .stButton button[kind="secondary"] {
+    background-color: transparent !important;
+    color: #4b5563 !important;
+}
+section[data-testid="stSidebar"] .stButton button[kind="secondary"]:hover {
+    background-color: rgba(0,0,0,0.02) !important;
+    color: #111827 !important;
+}
+
+/* Active Items - Minimalist */
+section[data-testid="stSidebar"] .stButton button[kind="primary"] {
+    background-color: transparent !important;
+    color: #0f766e !important; /* Accent color */
+    font-weight: 700 !important;
+    border: none !important;
+    border-radius: 4px !important;
+}
+section[data-testid="stSidebar"] .stButton button[kind="primary"]:hover {
+    background-color: rgba(15, 118, 110, 0.05) !important;
+}
+
+/* Popover Button (Three dots) */
+section[data-testid="stSidebar"] [data-testid="stPopover"] > button {
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: #9ca3af !important;
+    padding: 0.5rem 0 !important;
+    text-align: center !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+}
+section[data-testid="stSidebar"] [data-testid="stPopover"] > button:hover {
+    background-color: rgba(0,0,0,0.04) !important;
+    color: #374151 !important;
+}
+
+/* Popover Menu Items (Inside) */
+div[data-testid="stPopoverBody"] button {
+    font-size: 0.85rem !important;
+    padding: 0.2rem 0.5rem !important;
+    min-height: 0 !important;
+    height: auto !important;
+    line-height: 1.5 !important;
 }
 
 [data-testid="stSidebar"] [data-testid="stExpander"] summary {
@@ -209,45 +256,15 @@ body:has([data-testid="stSidebar"][aria-expanded="false"]) [data-testid="stChatI
     right: 1rem;
 }
 
-/* Tabs */
-div[data-baseweb="tab-list"] {
-    gap: 0.4rem;
-    background: #fff7ec;
-    border: 1px solid var(--border);
-    padding: 0.35rem;
-    border-radius: 999px;
-    box-shadow: var(--shadow);
-    position: fixed;
-    top: var(--header-offset);
-    left: calc(var(--sidebar-width) + 1.5rem);
-    right: 1.5rem;
-    max-width: 1200px;
-    margin-left: auto;
-    margin-right: auto;
-    z-index: 1100;
-}
-
-@media (max-width: 900px) {
-    div[data-baseweb="tab-list"] {
-        left: 1rem;
-        right: 1rem;
-    }
-}
-
+/* Tabs (Inner) */
 button[role="tab"] {
     color: var(--muted) !important;
-    border-radius: 999px !important;
-    padding: 0.45rem 1rem !important;
     font-weight: 600;
 }
 
 button[role="tab"][aria-selected="true"] {
-    background: var(--accent) !important;
-    color: #ffffff !important;
-}
-
-div[data-testid="stTabs"] {
-    padding-top: 0.75rem;
+    color: var(--accent) !important;
+    border-bottom-color: var(--accent) !important;
 }
 
 /* Divider color */
@@ -281,97 +298,154 @@ def render_data_management():
     with tab_query:
         st.subheader("查询")
 
-        default_filters = {
-            "name": "",
-            "student_id": "",
-            "class_name": "",
-            "college": "全部",
-            "major": "全部",
-            "grade": "全部",
-            "gender": "全部",
-        }
+        # 初始化 active_filters 用于存储实际查询条件
+        # 注意：从单选改为多选后，需要确保默认值是空列表 [] 而不是 "全部"
+        if "active_filters" not in st.session_state:
+            st.session_state.active_filters = {
+                "name": "", "student_id": "", "class_name": "",
+                "college": [], "major": [], "grade": [], "gender": []
+            }
+        else:
+            # 兼容性处理：如果旧状态中存在 "全部"，重置为 []
+            af = st.session_state.active_filters
+            if af.get("college") == "全部": af["college"] = []
+            if af.get("major") == "全部": af["major"] = []
+            if af.get("grade") == "全部": af["grade"] = []
+            if af.get("gender") == "全部": af["gender"] = []
 
-        if "data_filters" not in st.session_state:
-            st.session_state.data_filters = default_filters
-
-        filters = st.session_state.data_filters
-
+        # 1. 获取基础选项数据
         try:
             colleges = [c for c in get_distinct_values("college") if c]
         except Exception:
             colleges = []
-        try:
-            majors = [m for m in get_distinct_values("major") if m]
-        except Exception:
-            majors = []
+        
         try:
             grades = sorted({int(g) for g in get_distinct_values("grade") if g is not None})
         except Exception:
             grades = []
 
-        college_options = ["全部"] + colleges
-        major_options = ["全部"] + majors
-        grade_options = ["全部"] + [str(g) for g in grades]
-        gender_options = ["全部", "男", "女"]
+        # 2. 处理级联选择逻辑 (学院 -> 专业)
+        # 获取当前选中的学院（从 session_state 获取）
+        current_college = st.session_state.get("filter_college", st.session_state.active_filters["college"])
+        
+        # 确保 current_college 是列表 (兼容旧状态)
+        if current_college == "全部": current_college = []
+        
+        if current_college:
+            try:
+                # 查询所选学院下的专业 (多选)
+                in_clause = "', '".join(current_college)
+                major_df = query_df(f"SELECT DISTINCT major FROM students WHERE college IN ('{in_clause}')")
+                majors = major_df["major"].tolist() if not major_df.empty else []
+            except Exception:
+                majors = []
+        else:
+            try:
+                majors = [m for m in get_distinct_values("major") if m]
+            except Exception:
+                majors = []
 
-        with st.form("data_filters_form"):
-            col1, col2, col3 = st.columns(3)
-            name = col1.text_input("姓名", value=filters["name"])
-            student_id = col2.text_input("学号", value=filters["student_id"])
-            class_name = col3.text_input("班级", value=filters["class_name"])
+        college_options = colleges
+        major_options = majors
+        grade_options = [str(g) for g in grades]
+        gender_options = ["男", "女"]
 
-            col4, col5, col6, col7 = st.columns(4)
-            college = col4.selectbox(
-                "学院",
-                options=college_options,
-                index=_option_index(college_options, filters["college"])
-            )
-            major = col5.selectbox(
-                "专业",
-                options=major_options,
-                index=_option_index(major_options, filters["major"])
-            )
-            grade = col6.selectbox(
-                "年级",
-                options=grade_options,
-                index=_option_index(grade_options, filters["grade"])
-            )
-            gender = col7.selectbox(
-                "性别",
-                options=gender_options,
-                index=_option_index(gender_options, filters["gender"])
-            )
+        # 检查当前选中的专业是否在新的选项列表中
+        # 对于多选，我们需要过滤掉不再有效的选项
+        current_major = st.session_state.get("filter_major", [])
+        if current_major == "全部": current_major = [] # 兼容
+        
+        if current_major:
+            valid_majors = [m for m in current_major if m in major_options]
+            if len(valid_majors) != len(current_major):
+                st.session_state["filter_major"] = valid_majors
 
-            c_apply, c_reset = st.columns(2)
-            submitted = c_apply.form_submit_button("应用过滤")
-            reset = c_reset.form_submit_button("重置")
+        # 3. 渲染过滤组件
+        col1, col2, col3 = st.columns(3)
+        
+        def init_filter_key(key, field):
+            if key not in st.session_state:
+                st.session_state[key] = st.session_state.active_filters[field]
+            # 再次确保类型正确 (防止从旧 session 恢复出 string)
+            if key in ["filter_college", "filter_major", "filter_grade", "filter_gender"]:
+                if st.session_state[key] == "全部":
+                    st.session_state[key] = []
 
-        if submitted:
-            st.session_state.data_filters = {
-                "name": name,
-                "student_id": student_id,
-                "class_name": class_name,
-                "college": college,
-                "major": major,
-                "grade": grade,
-                "gender": gender,
+        init_filter_key("filter_name", "name")
+        init_filter_key("filter_student_id", "student_id")
+        init_filter_key("filter_class_name", "class_name")
+        init_filter_key("filter_college", "college")
+        init_filter_key("filter_major", "major")
+        init_filter_key("filter_grade", "grade")
+        init_filter_key("filter_gender", "gender")
+
+        col1.text_input("姓名", key="filter_name")
+        col2.text_input("学号", key="filter_student_id")
+        col3.text_input("班级", key="filter_class_name")
+
+        col4, col5, col6, col7 = st.columns(4)
+        # 改为 multiselect
+        col4.multiselect("学院", options=college_options, key="filter_college", placeholder="全部")
+        col5.multiselect("专业", options=major_options, key="filter_major", placeholder="全部")
+        col6.multiselect("年级", options=grade_options, key="filter_grade", placeholder="全部")
+        col7.multiselect("性别", options=gender_options, key="filter_gender", placeholder="全部")
+
+        # 4. 按钮区域
+        c_apply, c_reset = st.columns(2)
+        
+        # 查询按钮
+        if c_apply.button("查询", use_container_width=True):
+            st.session_state.active_filters = {
+                "name": st.session_state.filter_name,
+                "student_id": st.session_state.filter_student_id,
+                "class_name": st.session_state.filter_class_name,
+                "college": st.session_state.filter_college,
+                "major": st.session_state.filter_major,
+                "grade": st.session_state.filter_grade,
+                "gender": st.session_state.filter_gender,
             }
-            filters = st.session_state.data_filters
-        elif reset:
-            st.session_state.data_filters = default_filters
-            filters = st.session_state.data_filters
+            st.rerun()
 
-        grade_value = filters["grade"]
-        grade_query = int(grade_value) if grade_value and grade_value != "全部" else None
+        # 重置按钮
+        if c_reset.button("重置", use_container_width=True):
+            st.session_state.active_filters = {
+                "name": "", "student_id": "", "class_name": "",
+                "college": [], "major": [], "grade": [], "gender": []
+            }
+            keys_to_reset = [
+                "filter_name", "filter_student_id", "filter_class_name",
+                "filter_college", "filter_major", "filter_grade", "filter_gender"
+            ]
+            for key in keys_to_reset:
+                if key in st.session_state:
+                    del st.session_state[key]
+            st.rerun()
+
+        # 5. 执行查询
+        filters = st.session_state.active_filters
+        
+        # 处理 Grade (str -> int)
+        grade_val = filters["grade"]
+        if grade_val and isinstance(grade_val, list):
+            grade_query = [int(g) for g in grade_val]
+        elif grade_val and grade_val != "全部":
+            grade_query = int(grade_val)
+        else:
+            grade_query = None
+
+        # 处理其他 "全部" 情况 (兼容)
+        f_college = filters["college"] if filters["college"] != "全部" else None
+        f_major = filters["major"] if filters["major"] != "全部" else None
+        f_gender = filters["gender"] if filters["gender"] != "全部" else None
 
         df = query_students(
             name=filters["name"] or None,
             student_id=filters["student_id"] or None,
             class_name=filters["class_name"] or None,
-            college=None if filters["college"] == "全部" else filters["college"],
-            major=None if filters["major"] == "全部" else filters["major"],
+            college=f_college,
+            major=f_major,
             grade=grade_query,
-            gender=None if filters["gender"] == "全部" else filters["gender"],
+            gender=f_gender,
         )
 
         st.divider()
@@ -670,93 +744,169 @@ current = st.session_state.sessions[current_sid]
 # =====================
 # 侧边栏
 # =====================
+# =====================
+# 侧边栏 & 导航逻辑
+# =====================
+if "current_page" not in st.session_state:
+    st.session_state.current_page = "对话"
+
 with st.sidebar:
-    if st.button("➕ 新建对话", use_container_width=True):
-        sid = str(uuid.uuid4())
-        st.session_state.sessions[sid] = {
-            "title": "新对话", "messages": [], "pending": None
+    # 1. 功能导航 (卡片折叠式，常态展开)
+    with st.expander("🧭 功能导航", expanded=True):
+        # 扁平化菜单按钮
+        nav_items = {
+            "对话": "💬",
+            "数据看板": "📊",
+            "数据管理": "🗃️"
         }
-        st.session_state.current_session_id = sid
-        history_mgr.save_history(st.session_state.sessions)
-        st.rerun()
-
-    st.divider()
-    st.markdown("### 🗂️ 历史对话")
-    
-    # 倒序显示，最新的在上面
-    for sid in reversed(list(st.session_state.sessions.keys())):
-        sess = st.session_state.sessions[sid]
-        # 高亮当前会话
-        label = sess["title"]
-        if sid == current_sid:
-            label = f"👉 {label}"
-            
-        if st.button(label, key=sid, use_container_width=True):
-            st.session_state.current_session_id = sid
-            st.rerun()
-
-    st.divider()
-    
-    # 当前会话设置
-    with st.expander("⚙️ 当前对话设置", expanded=False):
-        new_title = st.text_input("重命名", value=current["title"])
-        if st.button("保存名称"):
-            current["title"] = new_title
-            history_mgr.save_history(st.session_state.sessions)
-            st.rerun()
-            
-        if st.button("🧹 清空消息"):
-            current["messages"] = []
-            current["pending"] = None
-            history_mgr.save_history(st.session_state.sessions)
-            st.rerun()
-            
-        if st.button("🗑️ 删除对话"):
-            if len(st.session_state.sessions) > 1:
-                del st.session_state.sessions[current_sid]
-                # Switch to another
-                st.session_state.current_session_id = list(st.session_state.sessions.keys())[0]
-                history_mgr.save_history(st.session_state.sessions)
+        
+        for page_name, icon in nav_items.items():
+            is_active = (st.session_state.current_page == page_name)
+            # 选中项使用 primary 样式，未选中项使用 secondary (透明)
+            if st.button(
+                f"{icon} {page_name}",
+                key=f"nav_btn_{page_name}",
+                use_container_width=True,
+                type="primary" if is_active else "secondary"
+            ):
+                st.session_state.current_page = page_name
                 st.rerun()
-            else:
-                st.warning("至少保留一个对话")
+
+    # 2. 历史对话
+    with st.expander("🗂️ 历史对话", expanded=True):
+        
+        # 新建对话按钮 (保持 Secondary 样式，或可视情况改为 Primary)
+        def on_new_chat():
+            sid = str(uuid.uuid4())
+            st.session_state.sessions[sid] = {
+                "title": "新对话", "messages": [], "pending": None
+            }
+            st.session_state.current_session_id = sid
+            st.session_state.current_page = "对话"
+            history_mgr.save_history(st.session_state.sessions)
+
+        st.button("➕ 新建对话", use_container_width=True, on_click=on_new_chat)
+        st.divider()
+
+        # 初始化重命名状态
+        if "renaming_session_id" not in st.session_state:
+            st.session_state.renaming_session_id = None
+
+        # 定义重命名回调
+        def on_rename_submit(sid):
+            key = f"rename_input_{sid}"
+            if key in st.session_state:
+                new_name = st.session_state[key]
+                if new_name.strip():
+                    st.session_state.sessions[sid]["title"] = new_name.strip()
+                    history_mgr.save_history(st.session_state.sessions)
+            st.session_state.renaming_session_id = None
+
+        # 遍历显示历史会话
+        for sid in reversed(list(st.session_state.sessions.keys())):
+            sess = st.session_state.sessions[sid]
+            is_active = (sid == current_sid)
+            
+            # 调整比例，让菜单按钮更紧凑
+            col_title, col_menu = st.columns([5, 1], gap="small")
+            
+            with col_title:
+                if st.session_state.renaming_session_id == sid:
+                    st.text_input(
+                        "重命名",
+                        value=sess["title"],
+                        key=f"rename_input_{sid}",
+                        label_visibility="collapsed",
+                        on_change=on_rename_submit,
+                        args=(sid,)
+                    )
+                else:
+                    label = sess["title"]
+                    # 选中项使用 primary 样式
+                    if st.button(
+                        label,
+                        key=f"sess_btn_{sid}",
+                        use_container_width=True,
+                        type="primary" if is_active else "secondary"
+                    ):
+                        st.session_state.current_session_id = sid
+                        st.session_state.current_page = "对话"
+                        st.rerun()
+
+            with col_menu:
+                try:
+                    pop = st.popover("⋮", use_container_width=True)
+                    with pop:
+                        if st.button("✏️ 重命名", key=f"menu_ren_{sid}", use_container_width=True):
+                            st.session_state.renaming_session_id = sid
+                            st.rerun()
+                        
+                        if st.button("🧹 清空消息", key=f"menu_clr_{sid}", use_container_width=True):
+                            st.session_state.sessions[sid]["messages"] = []
+                            st.session_state.sessions[sid]["pending"] = None
+                            history_mgr.save_history(st.session_state.sessions)
+                            st.rerun()
+                            
+                        if st.button("🗑️ 删除", key=f"menu_del_{sid}", use_container_width=True):
+                            if len(st.session_state.sessions) > 1:
+                                del st.session_state.sessions[sid]
+                                if sid == current_sid:
+                                    st.session_state.current_session_id = list(st.session_state.sessions.keys())[0]
+                                history_mgr.save_history(st.session_state.sessions)
+                                st.rerun()
+                            else:
+                                st.warning("至少保留一个")
+                except AttributeError:
+                    st.caption("⚠️")
 
     st.divider()
-
-    with st.expander("模型设置", expanded=False):
-        api_key = st.text_input(
-            "DASHSCOPE_API_KEY",
-            type="password",
-            value=st.session_state.dashscope_api_key
-        )
-        if api_key != st.session_state.dashscope_api_key:
-            st.session_state.dashscope_api_key = api_key
-            llm.set_api_key(api_key)
-
-        if not llm.has_api_key():
-            st.warning("未检测到 API Key，部分智能解析功能将不可用。")
-        else:
-            st.caption("已加载 API Key")
 
     with st.expander("示例问题", expanded=False):
-        if st.button("查询张三信息", key="quick_query_1"):
-            st.session_state.quick_prompt = "查询张三信息"
+        if st.button("查询李飞信息", key="quick_query_1"):
+            st.session_state.quick_prompt = "查询李飞信息"
         if st.button("统计计算机学院人数", key="quick_query_2"):
             st.session_state.quick_prompt = "统计计算机学院人数"
         if st.button("统计各学院人数", key="quick_query_3"):
             st.session_state.quick_prompt = "统计各学院人数"
-        if st.button("张三是男生吗", key="quick_query_4"):
-            st.session_state.quick_prompt = "张三是男生吗"
+        if st.button("李飞是男生吗", key="quick_query_4"):
+            st.session_state.quick_prompt = "李飞是男生吗"
 
     st.divider()
 
 # =====================
 # 主界面
 # =====================
-tab_chat, tab_dashboard, tab_data = st.tabs(['对话', '数据看板', '数据管理'])
+# =====================
+# 主界面内容渲染
+# =====================
 
-with tab_chat:
+if st.session_state.current_page == "对话":
     st.title("基于大语言模型的学生信息管理助手")
+    
+    # 悬浮标题 
+    st.markdown(f"""
+    <div class="floating-title">
+        {current['title']}
+    </div>
+    <style>
+    .floating-title {{
+        position: fixed;
+        top: 3.8rem;
+        left: calc(50% + var(--sidebar-width) / 2);
+        transform: translateX(-50%);
+        z-index: 999;
+        background-color: rgba(255, 255, 255, 0.95);
+        padding: 6px 16px;
+        border-radius: 20px;
+        border: 1px solid rgba(0,0,0,0.1);
+        font-size: 0.85rem;
+        color: #444;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        backdrop-filter: blur(4px);
+        transition: left 0.3s ease;
+    }}
+    </style>
+    """, unsafe_allow_html=True)
 
     for i, msg in enumerate(current["messages"]):
         with st.chat_message(msg["role"]):
@@ -801,7 +951,7 @@ with tab_chat:
                 # Case 3: 大数据表格 -> 使用交互式 DataFrame
                 else:
                     st.dataframe(df, use_container_width=True, hide_index=True)
-
+                
                 should_plot = bool(msg.get("plot"))
                 if not should_plot and df is not None and len(df.columns) >= 2:
                     num_cols = df.select_dtypes(include="number").columns
@@ -893,8 +1043,8 @@ with tab_chat:
         history_mgr.save_history(st.session_state.sessions)
         st.rerun()
 
-with tab_dashboard:
+elif st.session_state.current_page == "数据看板":
     render_dashboard()
 
-with tab_data:
+elif st.session_state.current_page == "数据管理":
     render_data_management()
