@@ -338,13 +338,16 @@ students (
         if "是" in text and "吗" in text: # e.g. 张三是男生吗
             return "boolean"
 
+        # 优先匹配统计意图 (避免 "查询人数" 被误判为 select)
+        if any(k in text for k in ["统计", "人数", "多少"]):
+            return "count"
+
         # 明确数据库操作
         if any(k in text for k in ["查询", "查一下", "查看", "搜索", "找"]):
             if any(k in text for k in ["和", "或", "且"]):
                 return "complex_select"
             return "select"
-        if any(k in text for k in ["统计", "人数", "多少"]):
-            return "count"
+        
         if any(k in text for k in ["新增", "添加", "插入"]):
             return "insert"
         if any(k in text for k in ["修改", "更新"]):
