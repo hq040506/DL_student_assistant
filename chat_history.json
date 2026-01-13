@@ -1,28 +1,40 @@
 {
-  "62f4f921-cc81-4856-82b0-b2f44e2fcb4a": {
-    "title": "查询人数",
+  "a2130dc2-ed62-43ff-9ec2-ab915c4bd7ad": {
+    "title": "查询李飞信息",
     "messages": [
       {
         "role": "user",
-        "content": "你好"
+        "content": "查询李飞信息"
       },
       {
         "role": "assistant",
-        "content": "👋 你好！我是学生信息管理助手。\n\n我可以帮你：\n• 查询学生信息（如：查询张三信息）\n• 查询单个字段（如：张三的性别）\n• 统计人数（如：统计计算机学院人数）"
-      },
-      {
-        "role": "user",
-        "content": "查询计算机学院学生情况"
-      },
-      {
-        "role": "assistant",
-        "content": "🤖 已为您执行查询：\n`SELECT * FROM students WHERE college = '计算机学院'`\n\n🤔 您还想了解什么？(例如：修改手机号、统计班级人数等)",
-        "sql": "SELECT * FROM students WHERE college = '计算机学院'",
+        "content": "🤖 已为您执行查询：\n`SELECT * FROM students WHERE name = '李飞'`\n\n📄 **详细信息**：\n**李飞** (学号: 2024042309) 是 **机械工程学院** **车辆工程** 专业 **2024** 级的学生，性别 **男**，所在班级为 **车辆2403班**，手机号为 **15668854708**。\n\n🤔 您还想了解什么？(例如：修改手机号、统计班级人数等)",
+        "sql": "SELECT * FROM students WHERE name = '李飞'",
         "plot": false
       },
       {
         "role": "user",
-        "content": "给我画出计算机学院的统计图"
+        "content": "查询李飞信息"
+      },
+      {
+        "role": "assistant",
+        "content": "🤖 已为您执行查询：\n`SELECT * FROM students WHERE name = '李飞'`\n\n📄 **详细信息**：\n**李飞** (学号: 2024042309) 是 **机械工程学院** **车辆工程** 专业 **2024** 级的学生，性别 **男**，所在班级为 **车辆2403班**，手机号为 **15668854708**。\n\n🤔 您还想了解什么？(例如：修改手机号、统计班级人数等)",
+        "sql": "SELECT * FROM students WHERE name = '李飞'",
+        "plot": false
+      },
+      {
+        "role": "user",
+        "content": "统计计算机学院人数"
+      },
+      {
+        "role": "assistant",
+        "content": "🤖 已为您执行查询：\n`SELECT COUNT(*) FROM students WHERE college = '计算机学院'`\n\n🤔 您还想了解什么？(例如：修改手机号、统计班级人数等)",
+        "sql": "SELECT COUNT(*) FROM students WHERE college = '计算机学院'",
+        "plot": true
+      },
+      {
+        "role": "user",
+        "content": "统计各学院人数"
       },
       {
         "role": "assistant",
@@ -32,13 +44,161 @@
       },
       {
         "role": "user",
-        "content": "画出计算机学院各专业的人数分布"
+        "content": "李飞是男生吗"
       },
       {
         "role": "assistant",
-        "content": "🤖 已为您执行查询：\n`SELECT major, COUNT(*) AS count FROM students WHERE college = '计算机学院' GROUP BY major`\n\n🤔 您还想了解什么？(例如：修改手机号、统计班级人数等)",
-        "sql": "SELECT major, COUNT(*) AS count FROM students WHERE college = '计算机学院' GROUP BY major",
+        "content": "✅ 是的，查询结果为：男"
+      },
+      {
+        "role": "user",
+        "content": "统计各专业人数"
+      },
+      {
+        "role": "assistant",
+        "content": "🤖 已为您执行查询：\n`SELECT major, COUNT(*) AS count FROM students GROUP BY major`\n\n🤔 您还想了解什么？(例如：修改手机号、统计班级人数等)",
+        "sql": "SELECT major, COUNT(*) AS count FROM students GROUP BY major",
         "plot": true
+      },
+      {
+        "role": "user",
+        "content": "统计自动化学院男女人数的比例"
+      },
+      {
+        "role": "assistant",
+        "content": "🤖 已为您执行查询：\n`SELECT gender, COUNT(*) AS count FROM students WHERE college = '自动化学院' GROUP BY gender`\n\n🤔 您还想了解什么？(例如：修改手机号、统计班级人数等)",
+        "sql": "SELECT gender, COUNT(*) AS count FROM students WHERE college = '自动化学院' GROUP BY gender",
+        "plot": true
+      },
+      {
+        "role": "user",
+        "content": "统计各专业人数"
+      },
+      {
+        "role": "assistant",
+        "content": "🤖 已为您执行查询：\n`SELECT major, COUNT(*) AS count FROM students GROUP BY major`\n\n🤔 您还想了解什么？(例如：修改手机号、统计班级人数等)",
+        "sql": "SELECT major, COUNT(*) AS count FROM students GROUP BY major",
+        "plot": true
+      },
+      {
+        "role": "user",
+        "content": "查询计算机学院的人数"
+      },
+      {
+        "role": "assistant",
+        "content": "🤖 已为您执行查询：\n`SELECT COUNT(*) AS count FROM students WHERE college = '计算机学院'`\n\n🤔 您还想了解什么？(例如：修改手机号、统计班级人数等)",
+        "sql": "SELECT COUNT(*) AS count FROM students WHERE college = '计算机学院'",
+        "plot": true
+      },
+      {
+        "role": "user",
+        "content": "查询车辆2304班的人数"
+      },
+      {
+        "role": "assistant",
+        "content": "🤖 已为您执行查询：\n`SELECT COUNT(*) AS count FROM students WHERE class_name = '车辆2304班'`\n\n🤔 您还想了解什么？(例如：修改手机号、统计班级人数等)",
+        "sql": "SELECT COUNT(*) AS count FROM students WHERE class_name = '车辆2304班'",
+        "plot": true
+      },
+      {
+        "role": "user",
+        "content": "统计计算机学院的人数"
+      },
+      {
+        "role": "assistant",
+        "content": "🤖 已为您执行查询：\n`SELECT COUNT(*) AS count FROM students WHERE college = '计算机学院'`\n\n🤔 您还想了解什么？(例如：修改手机号、统计班级人数等)",
+        "sql": "SELECT COUNT(*) AS count FROM students WHERE college = '计算机学院'",
+        "plot": true
+      }
+    ],
+    "pending": null
+  },
+  "1931a790-81e4-4e47-9d47-f6dd3b95efd7": {
+    "title": "统计各专业人数",
+    "messages": [
+      {
+        "role": "user",
+        "content": "统计各专业人数"
+      },
+      {
+        "role": "assistant",
+        "content": "🤖 已为您执行查询：\n`SELECT major, COUNT(*) AS count FROM students GROUP BY major`\n\n🤔 您还想了解什么？(例如：修改手机号、统计班级人数等)",
+        "sql": "SELECT major, COUNT(*) AS count FROM students GROUP BY major",
+        "plot": true
+      },
+      {
+        "role": "user",
+        "content": "统计各专业人数"
+      },
+      {
+        "role": "assistant",
+        "content": "🤖 已为您执行查询：\n`SELECT major, COUNT(*) AS count FROM students GROUP BY major`\n\n🤔 您还想了解什么？(例如：修改手机号、统计班级人数等)",
+        "sql": "SELECT major, COUNT(*) AS count FROM students GROUP BY major",
+        "plot": true
+      },
+      {
+        "role": "user",
+        "content": "统计各专业人数"
+      },
+      {
+        "role": "assistant",
+        "content": "🤖 已为您执行查询：\n`SELECT major, COUNT(*) AS count FROM students GROUP BY major`\n\n🤔 您还想了解什么？(例如：修改手机号、统计班级人数等)",
+        "sql": "SELECT major, COUNT(*) AS count FROM students GROUP BY major",
+        "plot": true
+      },
+      {
+        "role": "user",
+        "content": "查询各学院人数"
+      },
+      {
+        "role": "assistant",
+        "content": "🤖 已为您执行查询：\n`SELECT college, COUNT(*) AS count FROM students GROUP BY college`\n\n🤔 您还想了解什么？(例如：修改手机号、统计班级人数等)",
+        "sql": "SELECT college, COUNT(*) AS count FROM students GROUP BY college",
+        "plot": true
+      },
+      {
+        "role": "user",
+        "content": "查询自动化学院中男生女生的人数比例"
+      },
+      {
+        "role": "assistant",
+        "content": "🤖 已为您执行查询：\n`SELECT gender, COUNT(*) AS count FROM students WHERE college = '自动化学院' GROUP BY gender`\n\n🤔 您还想了解什么？(例如：修改手机号、统计班级人数等)",
+        "sql": "SELECT gender, COUNT(*) AS count FROM students WHERE college = '自动化学院' GROUP BY gender",
+        "plot": true
+      },
+      {
+        "role": "user",
+        "content": "中国的首都是哪里？"
+      },
+      {
+        "role": "assistant",
+        "content": "中国的首都是北京。"
+      },
+      {
+        "role": "user",
+        "content": "我刚刚问了什么？"
+      },
+      {
+        "role": "assistant",
+        "content": "您之前询问的是：'查询自动化学院中男生女生的人数比例'。您还想了解什么？(例如：修改手机号、统计班级人数等)"
+      },
+      {
+        "role": "user",
+        "content": "查询机械工程学院当中工业设计专业的人数"
+      },
+      {
+        "role": "assistant",
+        "content": "🤖 已为您执行查询：\n`SELECT COUNT(*) FROM students WHERE college = '机械工程学院' AND major = '工业设计'`\n\n🤔 您还想了解什么？(例如：修改手机号、统计班级人数等)",
+        "sql": "SELECT COUNT(*) FROM students WHERE college = '机械工程学院' AND major = '工业设计'",
+        "plot": true
+      },
+      {
+        "role": "user",
+        "content": "我刚刚问了什么？"
+      },
+      {
+        "role": "assistant",
+        "content": "您之前询问的是：'查询机械工程学院当中工业设计专业的人数'。您还想了解什么？(例如：修改手机号、统计班级人数等)"
       }
     ],
     "pending": null
