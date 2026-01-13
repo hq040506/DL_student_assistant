@@ -55,10 +55,10 @@ def query_students(
     name: Optional[str] = None,
     student_id: Optional[str] = None,
     class_name: Optional[str] = None,
-    college: Optional[str] = None,
-    major: Optional[str] = None,
-    grade: Optional[int] = None,
-    gender: Optional[str] = None
+    college: Any = None, # str or List[str]
+    major: Any = None,   # str or List[str]
+    grade: Any = None,   # int or List[int]
+    gender: Any = None   # str or List[str]
 ) -> pd.DataFrame:
     conditions = []
     params = []
@@ -72,18 +72,43 @@ def query_students(
     if class_name:
         conditions.append("class_name LIKE ?")
         params.append(f"%{class_name}%")
+    
+    # 支持多选 (List/Tuple) 或单选
     if college:
-        conditions.append("college = ?")
-        params.append(college)
+        if isinstance(college, (list, tuple)):
+            placeholders = ",".join(["?"] * len(college))
+            conditions.append(f"college IN ({placeholders})")
+            params.extend(college)
+        else:
+            conditions.append("college = ?")
+            params.append(college)
+            
     if major:
-        conditions.append("major = ?")
-        params.append(major)
+        if isinstance(major, (list, tuple)):
+            placeholders = ",".join(["?"] * len(major))
+            conditions.append(f"major IN ({placeholders})")
+            params.extend(major)
+        else:
+            conditions.append("major = ?")
+            params.append(major)
+            
     if grade:
-        conditions.append("grade = ?")
-        params.append(int(grade))
+        if isinstance(grade, (list, tuple)):
+            placeholders = ",".join(["?"] * len(grade))
+            conditions.append(f"grade IN ({placeholders})")
+            params.extend([int(g) for g in grade])
+        else:
+            conditions.append("grade = ?")
+            params.append(int(grade))
+            
     if gender:
-        conditions.append("gender = ?")
-        params.append(gender)
+        if isinstance(gender, (list, tuple)):
+            placeholders = ",".join(["?"] * len(gender))
+            conditions.append(f"gender IN ({placeholders})")
+            params.extend(gender)
+        else:
+            conditions.append("gender = ?")
+            params.append(gender)
 
     sql = "SELECT * FROM students"
     if conditions:
