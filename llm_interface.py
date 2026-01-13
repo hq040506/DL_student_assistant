@@ -102,7 +102,7 @@ students (
 请以 JSON 格式返回结果，不要包含 Markdown 格式标记（如 ```json）：
 {{
     "type": "sql" | "chat" | "ask" | "boolean_check",
-    // sql: 普通查询; chat: 闲聊; ask: 追问; boolean_check: 是非判断(如"张三是男生吗")
+    // sql: 普通查询; chat: 闲聊/上下文回顾; ask: 追问; boolean_check: 是非判断(如"张三是男生吗")
     
     "sql": "SELECT ...",             // type="sql" 或 "boolean_check" 时需要。
     "response_type": "count" | "select", // type="sql" 时需要。
@@ -111,12 +111,13 @@ students (
 }}
 
 注意：
-1. 如果用户问“统计学院人数”或“各学院人数”，请使用 GROUP BY college。同理适用于专业、班级等。
-2. 如果用户问“张三是男生吗”，请返回 type="boolean_check"，生成查询性别的 SQL，并将 "男" 放入 expected_value。
-3. 如果用户只说“统计人数”且未指定维度，请返回 type="ask"，并在 message 中列出具体的学院或专业供用户选择（参考上面的列表）。
-4. 如果用户请求修改/删除/添加，请生成对应的 UPDATE/DELETE/INSERT 语句，并将 type 设为 "sql"。
-5. 模糊查询请使用 LIKE。
-6. 确保 SQL 语法正确。
+1. 如果用户询问之前的对话内容（如“我刚才问了什么”、“重复一遍”），请务必根据【上下文】中的信息进行回答，并将 type 设为 "chat"。
+2. 如果用户问“统计学院人数”或“各学院人数”，请使用 GROUP BY college。同理适用于专业、班级等。
+3. 如果用户问“张三是男生吗”，请返回 type="boolean_check"，生成查询性别的 SQL，并将 "男" 放入 expected_value。
+4. 如果用户只说“统计人数”且未指定维度，请返回 type="ask"，并在 message 中列出具体的学院或专业供用户选择（参考上面的列表）。
+5. 如果用户请求修改/删除/添加，请生成对应的 UPDATE/DELETE/INSERT 语句，并将 type 设为 "sql"。
+6. 模糊查询请使用 LIKE。
+7. 确保 SQL 语法正确。
 """
         
         try:
@@ -239,17 +240,18 @@ students (
 
 请以 JSON 格式返回结果，不要包含 Markdown 格式标记（如 ```json）：
 {{
-    "type": "sql" | "chat" | "ask",  // sql: 需要查询数据库; chat: 普通闲聊或直接回答; ask: 需要用户补充信息
+    "type": "sql" | "chat" | "ask",  // sql: 需要查询数据库; chat: 普通闲聊/上下文回顾; ask: 需要用户补充信息
     "sql": "SELECT ...",             // 仅当 type="sql" 时需要。请生成标准的 SQLite 查询语句。
     "response_type": "count" | "select", // 仅当 type="sql" 时需要。count: 统计类; select: 明细类
     "message": "..."                 // 仅当 type="chat" 或 "ask" 时需要。
 }}
 
 注意：
-1. 如果用户问“张三是男生吗”，请生成查询性别的 SQL，不要直接回答。
-2. 如果用户问“一共有几个专业”，请使用 SELECT COUNT(DISTINCT major)...
-3. 模糊查询请使用 LIKE。
-4. 确保 SQL 语法正确，字段名符合表结构。
+1. 如果用户询问之前的对话内容（如“我刚才问了什么”），请务必根据【上下文】中的信息进行回答，并将 type 设为 "chat"。
+2. 如果用户问“张三是男生吗”，请生成查询性别的 SQL，不要直接回答。
+3. 如果用户问“一共有几个专业”，请使用 SELECT COUNT(DISTINCT major)...
+4. 模糊查询请使用 LIKE。
+5. 确保 SQL 语法正确，字段名符合表结构。
 """
         
         try:
@@ -295,6 +297,8 @@ students (
 
         # ---------- 回退：原有规则逻辑 (作为兜底) ----------
         # 如果 LLM 失败，继续使用原来的逻辑
+        original_text = text  # 保留原始输入用于展示
+        
         if context:
             text = f"{context} {text}"
             
@@ -321,7 +325,7 @@ students (
             "type": "sql",
             "sql": sql,
             "response_type": response_type,
-            "explain": self._explain(text, plan, response_type)
+            "explain": self._explain(original_text, plan, response_type)
         }
 
     # =====================================================
